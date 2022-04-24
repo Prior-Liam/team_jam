@@ -1,0 +1,104 @@
+4/12/22
+-What is this project about?
+Since we talked about it in class I'm assuming we have to save the wav files/ binary files to vectors to be able to manipulate them to have an echo or go back to normal. To make them have an echo we can use what Dr. L said in class today. I have a picture of the code he wrote on my phone. To find out how long the vector should be we use logarithms and other math. Then he created a new file and saved the changed audio there. At some point we'll have to compress files? First image with boxes is Model-View-Controller pattern. Don't know what model exactly represents. The view is the UI. Don't know what the processors are?
+
+-Classes vs Structures
+Structures: default specifier: public
+Classes: Default specifier: private
+
+-Structure Account Code
+//Create Account struct
+#include <iostream>
+
+struct Account
+{
+  std::string username;
+  std::string email;
+  std::string password;
+  int creditCardNum;
+  
+};
+
+
+//---------------------------------------------------------------
+
+//main.cpp
+//Pretend you're coding in the main. Create an instance of Account and set values to all the attributes in Account
+int main()
+{
+  Account acc; //acc = acocunt
+
+  //Already public so we don't need getters or setters.
+  std::cin >> acc.username;
+  std::cin >> acc.email;
+  std::cin >> acc.password;
+  std::cin >> acc.creditCardNum;
+}
+
+-Wave File Format
+http://soundfile.sapp.org/doc/WaveFormat/
+
+-Wave File Structure Code
+typedef struct wav_header
+{
+  char chunkID[4];
+  int chunkSize;
+  char format[4];
+
+  char subchunk1ID[4];
+  int subchunk1Size;
+  short audioFormat;
+  short numChannels;
+  int sampleRate;
+  int byteRate;
+  short blockAlign;
+  short bitsPerSample;
+
+  char subchunk2ID[4];
+  int subchunk2Size;
+} WAV_HEADER;
+
+typedef and WAV_HEADER allows you to put 
+WAV_HEADER w; 
+instead of 
+struct wav_header w;
+
+binary files look like hexadecimal
+
+-What are binary files?
+bytes; usually in unicode and ascii
+
+-How can we read a wav file?
+The struct we made gives it a template to read the wav file.
+
+-How do we know if a binary file is a wav file?
+If it contains "WAVE".
+
+UML Map for project on phone.
+
+-Helpful website for fileIO including binary files
+https://www.cplusplus.com/doc/tutorial/files/
+
+-Mini project:
+Wav.cpp file from Wav.h struct
+Read File
+
+#include <fstream>
+#include <iostream>
+#include "Wav.h"
+
+void Wav::readFile(const std::string &fileName){
+  std::ifstream a_file(fileName, std::ios::binary | std::ios::in);
+  if(!a_file.is_open()){
+    std::cout << "This file could not be opened." << std::endl;
+  }
+  else{
+    //read wave header
+    a_file.read ((char*)&wavHeader, sizeof(wav_header));
+
+    buffer = new unsigned char[wav_header.data_bytes];
+    //read sound data
+    a_file.read ((char*)buffer, wav_header.data_bytes);
+    a_file.close();
+  }
+}
