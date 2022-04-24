@@ -4,31 +4,42 @@
 
 int main()
 {
+    const char* filePath;
+    GetUserWaveFile(filePath);
 
     return 0;
 }
 
+bool GetUserWaveFile(const char* filePath) {
+    string input;
+
+    cout << "Input wave file name: ";
+    cin >> input;
+    cin.get();
+    filePath = input.c_str();
+}
+
 void WaveFileManager::read(const std::string &fileName)
 {
-    std::ifstream file(fileName, std::ios::binary | std::ios::in);
-    short* buffer = nullptr;
-    if (file.is_open())
-    {
-        file.read((char*) &waveHeader, sizeof(wav_header));
-        buffer = new short [waveHeader.data_bytes];
-        file.read((char*) buffer, waveHeader.data_bytes);
+    // std::ifstream file(fileName, std::ios::binary | std::ios::in);
+    // short* buffer = nullptr;
+    // if (file.is_open())
+    // {
+    //     file.read((char*) &waveHeader, sizeof(wav_header));
+    //     buffer = new short [waveHeader.data_bytes];
+    //     file.read((char*) buffer, waveHeader.data_bytes);
     
-        for (int i = 0; i < waveHeader.data_bytes / waveHeader.sample_alignment; i++)
-        {
-            soundData.push_back((float) buffer[i] / MAX_16BIT);
-        }
-    file.close();
-    }
-    else
-    {
-        std::cout << "File not found" << std::endl;
-    }
-    delete[] buffer;
+    //     for (int i = 0; i < waveHeader.data_bytes / waveHeader.sample_alignment; i++)
+    //     {
+    //         soundData.push_back((float) buffer[i] / MAX_16BIT);
+    //     }
+    // file.close();
+    // }
+    // else
+    // {
+    //     std::cout << "File not found" << std::endl;
+    // }
+    // delete[] buffer;
 }
 
 typedef struct wav_header
