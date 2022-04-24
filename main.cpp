@@ -31,6 +31,8 @@ int main()
         if (file.is_open()) {
             PRINTX("File Successfully opened");
             does_wav_file_exist = true;
+        } else {
+            PRINTX("File: " << filePath << " does not exist");
         }
     }
 
