@@ -6,6 +6,7 @@
 #define PRINTX(x) std::cout << x << std::endl
 #define PRINT std::cout
 #define ENDL std::endl
+#define MAX_16BIT 65535
 
 // typedef struct wav_header
 // {
@@ -19,7 +20,7 @@
 //     short numChannels;
 //     int sampleRate;
 //     int byteRate;
-//     short blockAlign;
+//     short sampleAlignment;
 //     short bitsPerSample;
 
 //     char subchunk2ID[4];
@@ -29,26 +30,42 @@
 typedef struct WAV_HEADER
 {
     /* RIFF Chunk Descriptor */
-    uint8_t RIFFHeader[4]; // RIFF Header Magic header
-    uint32_t ChunkSize;    // RIFF Chunk Size
-    uint8_t WAVE[4];       // WAVE Header
+    char RIFFHeader[4]; // RIFF Header Magic header
+    int ChunkSize;      // RIFF Chunk Size
+    char WAVE[4];       // WAVE Header
     /* "fmt" sub-chunk */
-    char fmt[4];         // FMT header
-    int Subchunk1Size;   // Size of the fmt chunk
-    short AudioFormat;   // Audio format 1=PCM,6=mulaw,7=alaw,     257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM
-    short numChannels;   // Number of channels 1=Mono 2=Sterio
-    int sampleRate;      // Sampling Frequency in Hz
-    int byteRate;        // bytes per second
-    short blockAlign;    // 2=16-bit mono, 4=16-bit stereo
-    short bitsPerSample; // Number of bits per sample
+    char fmt[4];           // FMT header
+    int Subchunk1Size;     // Size of the fmt chunk
+    short AudioFormat;     // Audio format 1=PCM,6=mulaw,7=alaw,     257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM
+    short numChannels;     // Number of channels 1=Mono 2=Sterio
+    int sampleRate;        // Sampling Frequency in Hz
+    int byteRate;          // bytes per second
+    short sampleAlignment; // 2=16-bit mono, 4=16-bit stereo ( numChannels * bytesPerSample )
+    short bitsPerSample;   // Number of bits per sample
     /* "data" sub-chunk */
     uint8_t subchunk2ID[4]; // "data"  string
     uint32_t subchunk2Size; // Sampled data length
 } wav_header;
 
+// struct header_struct {
+//   char chunk_id[4];
+//   union int_data chunk_size;
+//   char format[4];
+//   char subchunk1_id[4];
+//   union int_data subchunk1_size;
+//   union short_data audio_format;
+//   union short_data num_channels;
+//   union int_data sample_rate;
+//   union int_data byte_rate;
+//   union short_data block_align;
+//   union short_data bits_per_sample;
+//   char subchunk2_id[4];
+//   union int_data subchunk2_size;
+// };
+
 std::vector<int> AskForUserEffectsToApply()
 {
-    std::vector<int> effects_to_apply = {0,0,0};
+    std::vector<int> effects_to_apply = {0, 0, 0};
     PRINTX("What Audio Effects would you like to apply to the file: ");
     PRINTX("1. Echo");
     PRINTX("2. Reverse");
@@ -106,49 +123,79 @@ int *reverse(int arr[], int n)
     return arr;
 }
 
-bool DisplayFileContents(FILE *wavFile)
+void CreateOutputFile(std::string fileName)
+{
+    std::ofstream of(fileName);
+    if (of.is_open())
+    {
+        of << "Some text here" << std::endl;
+        of.flush();
+        of.close();
+        std::cout << "wrote the file successfully!" << std::endl;
+    }
+    else
+    {
+        std::cerr << "Failed to open file : " << std::endl;
+    }
+}
+
+bool DisplayFileContents(std::ifstream &wavFile)
 {
     // Read the header
     wav_header wavHeader;
-    int headerSize = sizeof(wav_header), filelength = 0;
+    size_t bytes_read = 1;
+    short *buffer = nullptr;
 
-    size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile);
-    std::cout << "Header Read " << bytesRead << " bytes." << ENDL;
-    if (bytesRead > 0)
+    wavFile.read((char *)&wavHeader, sizeof(wav_header));
+    buffer = new short[wavHeader.subchunk2Size];
+    wavFile.read((char *)buffer, wavHeader.subchunk2Size);
+
+    // std::ofstream of("TEST.wav");
+    // if(of.is_open()) {
+    //     of << sizeof(wav_header)wavHeader;
+    //     of << buffer;
+    // }
+
+    if (bytes_read > 0)
     {
         // Read the data
         uint16_t bytesPerSample = wavHeader.bitsPerSample / 8;      // Number     of bytes per sample
         uint64_t numSamples = wavHeader.ChunkSize / bytesPerSample; // How many samples are in the wav file?
-        static const uint16_t BUFFER_SIZE = 4096;
-        int *buffer = new int[BUFFER_SIZE];
-        while ((bytesRead = fread(buffer, sizeof buffer[0], BUFFER_SIZE / (sizeof buffer[0]), wavFile)) > 0)
+
+        std::vector<float> soundData;
+        for (int i = 0; i < wavHeader.subchunk2Size / wavHeader.sampleAlignment; i++)
         {
-            /** DO SOMETHING WITH THE WAVE DATA HERE **/
-            PRINTX(buffer);
+            soundData.push_back((float)buffer[i] / MAX_16BIT);
         }
+        // PRINTX("soundData Length: " << soundData.size());
+        // for (size_t i = 0; i < soundData.size(); i++)
+        // {
+        //     PRINTX("| " << soundData[i] << " |");
+        // }
+
         delete[] buffer;
         buffer = nullptr;
-        filelength = getFileSize(wavFile);
 
-        std::cout << "File is                    :" << filelength << " bytes." << ENDL;
-        std::cout << "RIFF header                :" << wavHeader.RIFFHeader[0] << wavHeader.RIFFHeader[1] << wavHeader.RIFFHeader[2] << wavHeader.RIFFHeader[3] << ENDL;
-        std::cout << "WAVE header                :" << wavHeader.WAVE[0] << wavHeader.WAVE[1] << wavHeader.WAVE[2] << wavHeader.WAVE[3] << ENDL;
-        std::cout << "FMT                        :" << wavHeader.fmt[0] << wavHeader.fmt[1] << wavHeader.fmt[2] << wavHeader.fmt[3] << ENDL;
-        std::cout << "Data size                  :" << wavHeader.ChunkSize << ENDL;
+        // std::cout << "File is                    :" << filelength << " bytes." << ENDL;
+        PRINTX("RIFF header                :" << wavHeader.RIFFHeader[0] << wavHeader.RIFFHeader[1] << wavHeader.RIFFHeader[2] << wavHeader.RIFFHeader[3]);
+        PRINTX("WAVE header                :" << wavHeader.WAVE[0] << wavHeader.WAVE[1] << wavHeader.WAVE[2] << wavHeader.WAVE[3]);
+        PRINTX("FMT                        :" << wavHeader.fmt[0] << wavHeader.fmt[1] << wavHeader.fmt[2] << wavHeader.fmt[3]);
+        PRINTX("Chunk Data size            :" << wavHeader.ChunkSize);
 
         // Display the sampling Rate from the header
-        std::cout << "Sampling Rate              :" << wavHeader.sampleRate << ENDL;
-        std::cout << "Number of bits used        :" << wavHeader.bitsPerSample << ENDL;
-        std::cout << "Number of channels         :" << wavHeader.numChannels << ENDL;
-        std::cout << "Number of bytes per second :" << wavHeader.byteRate << ENDL;
-        std::cout << "Data length                :" << wavHeader.subchunk2Size << ENDL;
-        std::cout << "Audio Format               :" << wavHeader.AudioFormat << ENDL;
+        PRINTX("Sampling Rate              :" << wavHeader.sampleRate);
+        PRINTX("Number of bits used        :" << wavHeader.bitsPerSample);
+        PRINTX("Number of channels         :" << wavHeader.numChannels);
+        PRINTX("Number of bytes per second :" << wavHeader.byteRate);
+        PRINTX("Data length                :" << wavHeader.subchunk2Size);
+        PRINTX("Audio Format               :" << wavHeader.AudioFormat);
         // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM
 
-        std::cout << "Block align                :" << wavHeader.blockAlign << ENDL;
-        std::cout << "Data string                :" << wavHeader.subchunk2ID[0] << wavHeader.subchunk2ID[1] << wavHeader.subchunk2ID[2] << wavHeader.subchunk2ID[3] << ENDL;
+        std::cout << "Block align          :" << wavHeader.sampleAlignment << ENDL;
+        std::cout << "Data string          :" << wavHeader.subchunk2ID[0] << wavHeader.subchunk2ID[1] << wavHeader.subchunk2ID[2] << wavHeader.subchunk2ID[3] << ENDL;
+        std::cout << "Subchunk2Size size   :" << wavHeader.subchunk2Size << ENDL;
     }
-    fclose(wavFile);
+    // fclose(wavFile);
     return true;
 }
 
@@ -161,10 +208,8 @@ bool GetUserWaveFile()
     filePath = AskForUserWaveFile();
     PRINTX("File received from user: " << filePath);
 
-    // std::ifstream file(filePath, std::ios::binary | std::ios::in);
-    // short *buffer = nullptr;
-    FILE *wavFile = fopen(filePath.c_str(), "r");
-    if (wavFile != nullptr)
+    std::ifstream wavFile(filePath, std::ios::binary | std::ios::in);
+    if (wavFile.is_open())
     {
         PRINTX("File Successfully opened");
         effects_to_apply = AskForUserEffectsToApply();
