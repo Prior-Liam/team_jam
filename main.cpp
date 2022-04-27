@@ -89,10 +89,23 @@ int *reverse(int arr[], int n)
     return arr;
 }
 
-void normalize(std::ifstream &wavFile){
-
-
-
+std::vector<short> normalize(std::vector<short> soundData){//first add et to buffer and then change it from there
+    std::vector<short> bufferNew;
+    short maxValue = 0, percentageOfChange, sum;
+    for (int it = 0; it < soundData.size(); it++) {
+        bufferNew.push_back(soundData[it]);
+    }
+    std::cout << bufferNew[0] << std::endl;
+    for (int it = 0; it < bufferNew.size(); it++)
+        if (bufferNew[it] && bufferNew[it] > maxValue)
+            maxValue = bufferNew[it];
+    sum = 255 - maxValue;
+    percentageOfChange = (255/sum) * 100;
+    for (int it = 0; it < bufferNew.size(); it++) {
+        bufferNew[it] *= percentageOfChange;
+    }
+    std::cout << "[" << sum << "   " << maxValue << "   " << percentageOfChange << "]" << std::endl;
+    return (bufferNew);
 }
 
 void CreateOutputFile(std::string fileName)
@@ -141,9 +154,10 @@ bool GetUserWaveFile()
     bool does_wav_file_exist = false;
     std::vector<int> effects_to_apply;
     short *buffer = nullptr;
-    std::vector<float> soundData;
+    std::vector<short> soundData, bufferFinal;
     wav_header wavHeader;
     size_t bytes_read = 1;
+    // Money operator + (const Money rhs);
 
     filePath = AskForUserWaveFile();
     PRINTX("File received from user: " << filePath);
@@ -164,15 +178,14 @@ bool GetUserWaveFile()
     {
         PRINTX("File Successfully opened");
         effects_to_apply = AskForUserEffectsToApply();
-
         if (effects_to_apply[0]){
-
+            // bufferFinal = 
         }
         if (effects_to_apply[1]){
-
+            // bufferFinal =
         }
         if (effects_to_apply[2]){
-            normalize(wavFile);
+            bufferFinal = normalize(soundData);
         }
         DisplayFileContents(wavHeader, wavFile);
         return true;
@@ -188,12 +201,10 @@ int main()
 {
     std::string filePath;
     bool does_wav_file_exist = false;
-
     while (!does_wav_file_exist)
     {
         does_wav_file_exist = GetUserWaveFile();
     }
-
     return 0;
 }
 
