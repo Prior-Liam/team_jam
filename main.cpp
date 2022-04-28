@@ -89,31 +89,37 @@ int *reverse(int arr[], int n)
     return arr;
 }
 
-std::vector<short> normalize(std::vector<short> soundData){//first add et to buffer and then change it from there
-    std::vector<short> bufferNew;
-    short maxValue = 0, percentageOfChange, sum;
-    for (int it = 0; it < soundData.size(); it++) {
-        bufferNew.push_back(soundData[it]);
-    }
-    std::cout << bufferNew[0] << std::endl;
-    for (int it = 0; it < bufferNew.size(); it++)
-        if (bufferNew[it] && bufferNew[it] > maxValue)
-            maxValue = bufferNew[it];
+std::vector<float> normalize(std::vector<float> soundData){
+    std::vector<float> bufferNew;
+    float maxValue = 0, percentageOfChange, sum;
+    for (int it = 0; it < soundData.size(); it++)
+        if (soundData[it] && soundData[it] > maxValue)
+            maxValue = soundData[it];
     sum = 255 - maxValue;
-    percentageOfChange = (255/sum) * 100;
-    for (int it = 0; it < bufferNew.size(); it++) {
-        bufferNew[it] *= percentageOfChange;
+    percentageOfChange = (2.5/sum) * 100;
+    for (int it = 0; it < soundData.size(); it++) {
+        bufferNew.push_back((short)(((soundData[it] * percentageOfChange) + soundData[it]) * MAX_16BIT));
     }
-    std::cout << "[" << sum << "   " << maxValue << "   " << percentageOfChange << "]" << std::endl;
     return (bufferNew);
 }
 
-void CreateOutputFile(std::string fileName)
+void CreateOutputFile(std::string fileName, std::vector<float> buffer, wav_header wavHeader)
 {
-    std::ofstream of(fileName);
+    std::string outputFile;
+    for (char c: fileName)
+        if (c != '.')
+            outputFile.push_back(c);
+    outputFile += "New.wav";
+    std::ofstream of(outputFile);
+
+    auto* outputBuffer = new short[buffer.size()];
+    for (int it = 0; it < buffer.size(); it++) {
+        outputBuffer[it] = (short) (buffer[it] * MAX_16BIT);
+    }
     if (of.is_open())
     {
-        of << "Some text here" << std::endl;
+        of.write((char*) &wavHeader, sizeof(wav_header));
+        of.write((char*) outputBuffer, wavHeader.subchunk2Size);
         of.flush();
         of.close();
         std::cout << "wrote the file successfully!" << std::endl;
@@ -154,7 +160,8 @@ bool GetUserWaveFile()
     bool does_wav_file_exist = false;
     std::vector<int> effects_to_apply;
     short *buffer = nullptr;
-    std::vector<short> soundData, bufferFinal;
+    std::vector<float> soundData;
+    std::vector<float>bufferFinal;
     wav_header wavHeader;
     size_t bytes_read = 1;
     // Money operator + (const Money rhs);
@@ -187,6 +194,7 @@ bool GetUserWaveFile()
         if (effects_to_apply[2]){
             bufferFinal = normalize(soundData);
         }
+        CreateOutputFile(filePath, bufferFinal, wavHeader);
         DisplayFileContents(wavHeader, wavFile);
         return true;
     }
@@ -197,7 +205,7 @@ bool GetUserWaveFile()
     return false;
 }
 
-int main()
+int main()//maybe check header later
 {
     std::string filePath;
     bool does_wav_file_exist = false;
