@@ -93,15 +93,44 @@ int getFileSize(FILE *inFile)
     return fileSize;
 }
 
-int *reverse(int arr[], int n)
+typedef struct ECHO_PARAMS {
+    float gain;
+    float delay;
+    int newFileSize;
+} echo_params;
+
+std::vector<float> echo(std::vector<float> soundData, wav_header wavHeader, echo_params params)
 {
-    for (int low = 0, high = n - 1; low < high; low++, high--)
+    std::vector<float> output;
+    auto decay = log(0.001)/log(params.gain);
+    std::vector<float> extendedSoundData(params.newFileSize, 0.0f);
+
+    params.newFileSize = int(soundData.size() + params.delay * decay);
+    extendedSoundData.reserve(params.newFileSize);
+    for (int it = 0; it < soundData.size(); it++)
     {
-        std::swap(arr[low], arr[high]);
+        if (it > params.delay)
+            output.push_back(extendedSoundData[it] + params.gain*output[it - params.delay]);
+        else   
+            output.push_back(extendedSoundData[it]);
     }
-    return arr;
+    return (output);
 }
 
+std::vector<float> reverse(std::vector<float> soundData, wav_header wavHeader)
+{
+    std::vector<float> bufferNew;
+    float maxValue = 0, percentageOfChange, sum;
+    bufferNew.reserve(wavHeader.subchunk2Size);
+    for (int it = 0; it < soundData.size(); it++)
+    {
+        bufferNew.push_back((short)((soundData[it]) * MAX_16BIT));
+    }
+    std::reverse(bufferNew.begin(), bufferNew.end());
+    return (bufferNew);
+}
+
+// NEED TO HANDLE STEREO :,(
 std::vector<float> normalize(std::vector<float> soundData, wav_header wavHeader)
 {
     std::vector<float> bufferNew;
@@ -119,13 +148,20 @@ std::vector<float> normalize(std::vector<float> soundData, wav_header wavHeader)
     return (bufferNew);
 }
 
-void CreateOutputFile(std::string fileName, std::vector<float> buffer, wav_header wavHeader)
+void CreateOutputFile(std::string fileName, std::vector<float> buffer, wav_header wavHeader, std::vector<int> effects_to_apply)
 {
     std::string outputFile;
     for (char c : fileName)
         if (c != '.')
             outputFile.push_back(c);
-    outputFile += "Normalized.wav";
+    if (effects_to_apply[1])
+        outputFile += "Echo.wav";
+    else if (effects_to_apply[1])
+        outputFile += "Reversed.wav";
+    else if (effects_to_apply[2])
+        outputFile += "Normalized.wav";
+    else
+        outputFile += "Copy.wav";
     std::ofstream of(outputFile);
 
     auto *outputBuffer = new short[buffer.size()];
@@ -199,7 +235,12 @@ bool AskForAndReadUserWavFile()
         {
             // uint16_t bytesPerSample = wavHeader.bitsPerSample / 8;      // Number     of bytes per sample
             // uint64_t numSamples = wavHeader.ChunkSize / bytesPerSample; // How many samples are in the wav file?
-            for (int i = 0; i < wavHeader.subchunk2Size / wavHeader.sampleAlignment; i++)
+            int chunkSize = 0;
+            if (wavHeader.numChannels == 2)
+                chunkSize = wavHeader.subchunk2Size * 2;
+            else
+                chunkSize = wavHeader.subchunk2Size;
+            for (int i = 0; i < chunkSize / wavHeader.sampleAlignment; i++)
             {
                 soundData.push_back((float)buffer[i] / MAX_16BIT);
             }
@@ -207,18 +248,21 @@ bool AskForAndReadUserWavFile()
         delete[] buffer;
         effects_to_apply = AskForUserEffectsToApply();
         if (effects_to_apply[0])
-        {
-            // bufferFinal =
+        {   
+            echo_params params;
+            params.gain = 1.0f;
+            params.delay = 5.0f;
+            bufferFinal = echo(soundData, wavHeader, params);
         }
         if (effects_to_apply[1])
         {
-            // bufferFinal =
+            bufferFinal = reverse(soundData, wavHeader);
         }
         if (effects_to_apply[2])
         {
             bufferFinal = normalize(soundData, wavHeader);
         }
-        CreateOutputFile(filePath, bufferFinal, wavHeader);
+        CreateOutputFile(filePath, bufferFinal, wavHeader, effects_to_apply);
         DisplayFileContents(wavHeader, wavFile);
         return true;
     }
