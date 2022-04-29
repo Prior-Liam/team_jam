@@ -96,17 +96,22 @@ int getFileSize(FILE *inFile)
 typedef struct ECHO_PARAMS {
     float gain;
     float delay;
-    int newFileSize;
 } echo_params;
 
-std::vector<float> echo(std::vector<float> soundData, wav_header wavHeader, echo_params params)
+std::vector<float> echo(std::vector<float>& soundData, wav_header wavHeader, echo_params params)
 {
     std::vector<float> output;
-    auto decay = log(0.001)/log(params.gain);
-    std::vector<float> extendedSoundData(params.newFileSize, 0.0f);
-
-    params.newFileSize = int(soundData.size() + params.delay * decay);
-    extendedSoundData.reserve(params.newFileSize);
+    auto decay = log(0.001f)/log(params.gain);
+    PRINTX(params.delay);
+    PRINTX(decay);
+    int newFileSize = int(soundData.size() + params.delay * decay);
+    PRINTX(newFileSize);
+    std::vector<float> extendedSoundData(newFileSize, 0.0f);
+    PRINTX("1");
+    extendedSoundData.insert(extendedSoundData.begin(), extendedSoundData.end() - 1, soundData.end());
+    PRINTX("2");
+    output.reserve(extendedSoundData.size());
+    PRINTX("3");
     for (int it = 0; it < soundData.size(); it++)
     {
         if (it > params.delay)
@@ -114,6 +119,7 @@ std::vector<float> echo(std::vector<float> soundData, wav_header wavHeader, echo
         else   
             output.push_back(extendedSoundData[it]);
     }
+    PRINTX("HERE FOCKER");
     return (output);
 }
 
@@ -154,7 +160,7 @@ void CreateOutputFile(std::string fileName, std::vector<float> buffer, wav_heade
     for (char c : fileName)
         if (c != '.')
             outputFile.push_back(c);
-    if (effects_to_apply[1])
+    if (effects_to_apply[0])
         outputFile += "Echo.wav";
     else if (effects_to_apply[1])
         outputFile += "Reversed.wav";
@@ -181,7 +187,7 @@ void CreateOutputFile(std::string fileName, std::vector<float> buffer, wav_heade
     }
     else
     {
-        std::cerr << "Failed to open file : " << std::endl;
+        std::cerr << "Failed to open file : " << outputFile << std::endl;
     }
 }
 
@@ -250,8 +256,8 @@ bool AskForAndReadUserWavFile()
         if (effects_to_apply[0])
         {   
             echo_params params;
-            params.gain = 1.0f;
-            params.delay = 5.0f;
+            params.gain = 0.8f;
+            params.delay = 1.0f;
             bufferFinal = echo(soundData, wavHeader, params);
         }
         if (effects_to_apply[1])
