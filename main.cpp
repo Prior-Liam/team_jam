@@ -93,15 +93,16 @@ int getFileSize(FILE *inFile)
     return fileSize;
 }
 
-typedef struct ECHO_PARAMS {
+typedef struct PARAMS {
     float gain;
     float delay;
-} echo_params;
+    bool stereo;
+} params;
 
-std::vector<float> echo(std::vector<float>& soundData, wav_header wavHeader, echo_params params)
+std::vector<float> echo(std::vector<float>& soundData, wav_header wavHeader, params params)
 {
     std::vector<float> output;
-    auto decay = log(0.001f)/log(params.gain);
+    auto decay =   log(0.001f)/log(params.gain);
     int newFileSize = int(soundData.size() + params.delay * decay);
     std::vector<float> extendedSoundData(newFileSize, 0.0f);
     extendedSoundData.insert(extendedSoundData.begin(), soundData.begin(), soundData.end());
@@ -109,11 +110,10 @@ std::vector<float> echo(std::vector<float>& soundData, wav_header wavHeader, ech
     for (int it = 0; it < soundData.size(); it++)
     {
         if (it > params.delay)
-            output.push_back(extendedSoundData[it] + params.gain*output[it - params.delay]);
+            output.push_back(extendedSoundData[it] + output[it - params.delay]*params.gain);
         else   
             output.push_back(extendedSoundData[it]);
     }
-    PRINTX("HERE FOCKER");
     return (output);
 }
 
@@ -249,9 +249,9 @@ bool AskForAndReadUserWavFile()
         effects_to_apply = AskForUserEffectsToApply();
         if (effects_to_apply[0])
         {   
-            echo_params params;
-            params.gain = 0.7f;
-            params.delay = 1.0f;
+            params params;
+            params.gain = 0.07f;
+            params.delay = 6.0f;
             bufferFinal = echo(soundData, wavHeader, params);
         }
         if (effects_to_apply[1])
