@@ -1,8 +1,8 @@
-main: main.cpp #processors.o
-	g++ -std=c++11 -o wave main.cpp
+main: src/Main.cpp processors.o
+	g++ -std=c++11 -o wave src/Main.cpp src/*.o
 
-processors.o: Echo.cpp Echo.h Reverser.cpp Reverser.h Normalizer.cpp Normalizer.h
-	g++ -std=c++11 -c Echo.h Reverser.cpp Reverser.h Normalizer.cpp Normalizer.h
+processors.o: src/WaveFileController.cpp src/WaveFileController.cpp src/ConsoleManager.cpp src/ConsoleManager.hpp src/Utils.hpp
+	g++ -std=c++11 -c src/WaveFileController.cpp src/WaveFileController.cpp src/ConsoleManager.cpp src/ConsoleManager.hpp src/Utils.hpp
 
 clean:
 	rm *.o *.gch wave
