@@ -102,16 +102,10 @@ std::vector<float> echo(std::vector<float>& soundData, wav_header wavHeader, ech
 {
     std::vector<float> output;
     auto decay = log(0.001f)/log(params.gain);
-    PRINTX(params.delay);
-    PRINTX(decay);
     int newFileSize = int(soundData.size() + params.delay * decay);
-    PRINTX(newFileSize);
     std::vector<float> extendedSoundData(newFileSize, 0.0f);
-    PRINTX("1");
-    extendedSoundData.insert(extendedSoundData.begin(), extendedSoundData.end() - 1, soundData.end());
-    PRINTX("2");
+    extendedSoundData.insert(extendedSoundData.begin(), soundData.begin(), soundData.end());
     output.reserve(extendedSoundData.size());
-    PRINTX("3");
     for (int it = 0; it < soundData.size(); it++)
     {
         if (it > params.delay)
@@ -256,7 +250,7 @@ bool AskForAndReadUserWavFile()
         if (effects_to_apply[0])
         {   
             echo_params params;
-            params.gain = 0.8f;
+            params.gain = 0.7f;
             params.delay = 1.0f;
             bufferFinal = echo(soundData, wavHeader, params);
         }
