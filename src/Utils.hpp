@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include <stdlib.h>
+// #include <stdlib.h>
 #include <vector>
-#include <math.h>
+#include <cmath>
 
 #define PRINTX(x) std::cout << x << std::endl
 #define PRINTDIVIDER PRINTX("-------------------------------" << ENDL);

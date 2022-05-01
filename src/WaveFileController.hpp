@@ -1,3 +1,5 @@
+#include "./ConsoleManager.hpp"
+
 class ConsoleManager;
 
 class WaveFileController

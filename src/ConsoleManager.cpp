@@ -1,6 +1,4 @@
 #include "ConsoleManager.hpp"
-#include "Utils.hpp"
-
 // Ask user for what effect they would like to apply
 std::vector<int> ConsoleManager::AskForUserEffectsToApply()
 {
