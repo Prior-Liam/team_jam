@@ -1,3 +1,5 @@
+class ConsoleManager;
+
 class WaveFileController
 {
 public:

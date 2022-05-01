@@ -1,13 +1,13 @@
 #include "Utils.hpp"
-#include "WaveFileManager.hpp"
+#include "WaveFileController.hpp"
 
 int main() // maybe check header later
 {
     bool does_wav_file_exist = false;
-    wav_file_manager = new WaveFileManager();
+    wav_file_controller = new WaveFileController();
     while (!does_wav_file_exist)
     {
-        does_wav_file_exist = wav_file_manager->AskForAndReadUserWavFile();
+        does_wav_file_exist = wav_file_controller->AskForAndReadUserWavFile();
     }
     return 0;
 }
