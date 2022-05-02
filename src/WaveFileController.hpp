@@ -1,9 +1,6 @@
-#include "./ConsoleManager.hpp"
+#include "ConsoleManager.hpp"
 
-class ConsoleManager;
-
-class WaveFileController
-{
+class WaveFileController : public ConsoleManager {
 public:
   explicit WaveFileController();
 
