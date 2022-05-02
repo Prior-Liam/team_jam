@@ -72,11 +72,13 @@ bool WaveFileController::AskForAndReadUserWavFile()
   {
     PRINTX("File Successfully opened");
     PRINTDIVIDER
+    std::cout << "\nnswag1\n";
     wavFile.read((char *)&wavHeader, sizeof(wav_header));
-    buffer = new short[wavHeader.subchunk2Size];
+    buffer = new short[wavHeader.subchunk2Size];//think we need to make a split between 8bit and 16bit jere
     wavFile.read((char *)buffer, wavHeader.subchunk2Size);
     if (bytes_read > 0)
     {
+      std::cout << "\nnswag2\n";
       // uint16_t bytesPerSample = wavHeader.bitsPerSample / 8;      // Number     of bytes per sample
       // uint64_t numSamples = wavHeader.ChunkSize / bytesPerSample; // How many samples are in the wav file?
       int chunkSize = 0;
