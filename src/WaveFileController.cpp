@@ -64,9 +64,10 @@ bool WaveFileController::AskForAndReadUserWavFile()
   std::vector<float> soundData;
   std::vector<float> bufferFinal;
 
-  // filePath = consoleManager_->AskForUserWaveFile();
+  filePath = consoleManager_->AskForUserWaveFile();
   PRINTX("File received from user: " << filePath);
   std::ifstream wavFile(filePath, std::ios::binary | std::ios::in);
+  std::cout << "path = " << filePath << std::endl;
   if (wavFile.is_open())
   {
     PRINTX("File Successfully opened");
