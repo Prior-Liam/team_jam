@@ -1,8 +1,15 @@
-main: processors.o
-	g++ -std=c++11 -o wave Main.o WaveFileController.o WaveFileController.o ConsoleManager.o
+CC = g++
+CFLAGS = -std=c++11
 
-processors.o: src/WaveFileController.cpp src/WaveFileController.cpp src/ConsoleManager.cpp src/ConsoleManager.hpp src/Utils.hpp src/Main.cpp
-	g++ -std=c++11 -c src/WaveFileController.cpp src/WaveFileController.cpp src/ConsoleManager.cpp src/Main.cpp
+main: Main.o WaveFileController.o ConsoleManager.o
+	$(CC) $(CFLAGS) -o wave -c src/Main.o src/WaveFileController.o src/ConsoleManager.o
+
+Main.o: src/Main.cpp src/WaveFileController.hpp src/ConsoleManager.hpp
+	$(CC) $(CFLAGS) -c src/Main.cpp src/WaveFileController.cpp src/ConsoleManager.cpp
+ 
+WaveFileController.o: src/WaveFileController.hpp
+ 
+ConsoleManager.o: src/ConsoleManager.hpp src/WaveFileController.hpp
 
 clean:
 	rm *.o *.gch wave
