@@ -3,7 +3,7 @@
 class ConsoleManager
 {
 public:
-  explicit ConsoleManager();
+  ConsoleManager() = default;
 
   std::string AskForUserWaveFile();
   std::vector<int> AskForUserEffectsToApply();

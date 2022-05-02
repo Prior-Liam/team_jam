@@ -9,5 +9,5 @@ public:
                         wav_header wavHeader, std::vector<int> effects_to_apply);
 
 private:
-  ConsoleManager *console_manager_;
+  ConsoleManager *consoleManager_;
 };

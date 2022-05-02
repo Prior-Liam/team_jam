@@ -50,7 +50,7 @@ static std::vector<float> normalize(std::vector<float> soundData, wav_header wav
 }
 
 WaveFileController::WaveFileController()
-    : console_manager_(new ConsoleManager()) {}
+    : consoleManager_(new ConsoleManager()) {}
 
 bool WaveFileController::AskForAndReadUserWavFile()
 {
@@ -64,7 +64,7 @@ bool WaveFileController::AskForAndReadUserWavFile()
   std::vector<float> soundData;
   std::vector<float> bufferFinal;
 
-  filePath = console_manager_->AskForUserWaveFile();
+  // filePath = consoleManager_->AskForUserWaveFile();
   PRINTX("File received from user: " << filePath);
   std::ifstream wavFile(filePath, std::ios::binary | std::ios::in);
   if (wavFile.is_open())
@@ -89,7 +89,7 @@ bool WaveFileController::AskForAndReadUserWavFile()
       }
     }
     delete[] buffer;
-    effects_to_apply = console_manager_->AskForUserEffectsToApply();
+    // effects_to_apply = consoleManager_->AskForUserEffectsToApply();
     if (effects_to_apply[0])
     {
       echo_params params;
@@ -106,7 +106,7 @@ bool WaveFileController::AskForAndReadUserWavFile()
       bufferFinal = normalize(soundData, wavHeader);
     }
     CreateOutputFile(filePath, bufferFinal, wavHeader, effects_to_apply);
-    console_manager_->DisplayFileContents(wavHeader, wavFile);
+    // consoleManager_->DisplayFileContents(wavHeader, wavFile);
     return true;
   }
   else
