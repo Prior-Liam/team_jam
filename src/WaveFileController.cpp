@@ -55,16 +55,18 @@ static std::vector<float> normalize(std::vector<float> soundData, wav_header wav
 WaveFileController::WaveFileController()
     : consoleManager_(new ConsoleManager()) {}
 
-bool WaveFileController::AskForAndReadUserWavFile()
+bool WaveFileController::AskForAndReadUserWavFile()//change htis method name.
 {
   std::string filePath;
   wav_header wavHeader;
-  std::vector<int> effects_to_apply;
+  int effects_to_apply;
   bool does_wav_file_exist = false;
   size_t bytes_read = 1;
 
-  short *buffer = nullptr;
+  float buffer;
+  float buffer2;
   std::vector<float> soundData;
+  std::vector<float> soundData2;
   std::vector<float> bufferFinal;
 
   filePath = consoleManager_->AskForUserWaveFile();
@@ -76,40 +78,48 @@ bool WaveFileController::AskForAndReadUserWavFile()
     PRINTX("File Successfully opened");
     PRINTDIVIDER
     wavFile.read((char *)&wavHeader, sizeof(wav_header));
-    buffer = new short[wavHeader.subchunk2Size];//think we need to make a split between 8bit and 16bit jere
-    wavFile.read((char *)buffer, wavHeader.subchunk2Size);
-    if (bytes_read > 0)
-    {
-      // uint16_t bytesPerSample = wavHeader.bitsPerSample / 8;      // Number     of bytes per sample
-      // uint64_t numSamples = wavHeader.ChunkSize / bytesPerSample; // How many samples are in the wav file?
-      int chunkSize = 0;
-      if (wavHeader.numChannels == 2)
-        chunkSize = wavHeader.subchunk2Size * 2;
-      else
-        chunkSize = wavHeader.subchunk2Size;
-      for (int i = 0; i < chunkSize / wavHeader.sampleAlignment; i++)
-      {
-        soundData.push_back((float)buffer[i] / MAX_16BIT);
-        std::cout << "[" << (float)buffer[i] / MAX_16BIT << std::endl;
+    int numSamples = wavHeader.subchunk2Size / (wavHeader.numChannels * (wavHeader.bitsPerSample / 8));
+    //okay this is where i read the file and store it the vector depending specs make into own method or something.
+    if (wavHeader.numChannels == 1) {
+      if (wavHeader.bitsPerSample == 8) {
+        for (int i = 0; i < numSamples; i++) {
+          wavFile.read((char*) &buffer, 1);
+          soundData.push_back(((float)buffer-128)/127);
+        }
+      } else if (wavHeader.bitsPerSample == 16) {
+        for (int it = 0; it < numSamples; it++)
+          wavFile.read((char *) &buffer, 2);
+          soundData.push_back((float)buffer/32768);
       }
-    }
-
-    delete[] buffer;
+      else if (wavHeader.numChannels == 2) {
+        if (wavHeader.bitsPerSample == 8) {
+        for (int i = 0; i < numSamples; i++) {
+          wavFile.read((char*) &buffer, 1);
+          soundData.push_back(((float)buffer-128)/127);
+          soundData2.push_back(((float)buffer-128)/127);
+        }
+        } else if (wavHeader.bitsPerSample == 16) {
+          for (int it = 0; it < numSamples; it++) {
+            wavFile.read((char *) &buffer, 2);
+            soundData.push_back((float)buffer/32768);
+            soundData2.push_back((float)buffer/32768);
+          }
+        }
+      }
+    }//this is user interface stuff
     effects_to_apply = consoleManager_->AskForUserEffectsToApply();
-    if (effects_to_apply[0])
-    {
-      echo_params params;
-      params.gain = 0.07f;
-      params.delay = 6.0f;
-      bufferFinal = echo(soundData, wavHeader, params);
-    }
-    if (effects_to_apply[1])
-    {
-      bufferFinal = reverse(soundData, wavHeader);
-    }
-    if (effects_to_apply[2])
-    {
-      bufferFinal = normalize(soundData, wavHeader);
+    switch (effects_to_apply) {
+        case 1:
+          echo_params params;
+          params.gain = 0.07f;
+          params.delay = 6.0f;
+          bufferFinal = echo(soundData, wavHeader, params); break;
+        case 2:
+          bufferFinal = reverse(soundData, wavHeader); break;
+        case 3:
+          bufferFinal = normalize(soundData, wavHeader); break;
+        default:
+          throw "yo what?"; exit(0);
     }
     CreateOutputFile(filePath, bufferFinal, wavHeader, effects_to_apply);
     consoleManager_->DisplayFileContents(wavHeader, wavFile);
@@ -124,20 +134,23 @@ bool WaveFileController::AskForAndReadUserWavFile()
 
 void WaveFileController::CreateOutputFile(
     std::string fileName, std::vector<float> buffer,
-    wav_header wavHeader, std::vector<int> effects_to_apply)
+    wav_header wavHeader, int effects_to_apply)
 {
   std::string outputFile;
   for (char c : fileName)
     if (c != '.')
       outputFile.push_back(c);
-  if (effects_to_apply[0])
-    outputFile += "Echo.wav";
-  else if (effects_to_apply[1])
-    outputFile += "Reversed.wav";
-  else if (effects_to_apply[2])
-    outputFile += "Normalized.wav";
-  else
-    outputFile += "Copy.wav";
+  switch (effects_to_apply) {
+    case 1:
+      outputFile += "Echo.wav";
+    case 2:
+      outputFile += "Reversed.wav";
+    case 3:
+      outputFile += "Normalized.wav";
+    default:
+      outputFile += "Copy.wav";
+      break;
+  }
   std::ofstream of(outputFile);
 
   auto *outputBuffer = new short[buffer.size()];

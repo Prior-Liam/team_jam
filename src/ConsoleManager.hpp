@@ -6,7 +6,7 @@ public:
   ConsoleManager() = default;
 
   std::string AskForUserWaveFile();
-  std::vector<int> AskForUserEffectsToApply();
+  int AskForUserEffectsToApply();
 
   bool DisplayFileContents(wav_header wavHeader, std::ifstream &wavFile);
 

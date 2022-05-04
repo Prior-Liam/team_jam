@@ -6,7 +6,7 @@ public:
 
   bool AskForAndReadUserWavFile();
   void CreateOutputFile(std::string fileName, std::vector<float> buffer,
-                        wav_header wavHeader, std::vector<int> effects_to_apply);
+                        wav_header wavHeader, int effects_to_apply);
 
 private:
   ConsoleManager *consoleManager_;

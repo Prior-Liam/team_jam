@@ -1,45 +1,25 @@
 #include "ConsoleManager.hpp"
 // Ask user for what effect they would like to apply
-std::vector<int> ConsoleManager::AskForUserEffectsToApply()
+int ConsoleManager::AskForUserEffectsToApply()
 {
-    std::vector<int> effects_to_apply = {0, 0, 0};
+    int effects_to_apply = 0;
     PRINTX("What Audio Effects would you like to apply to the file: ");
     PRINTX("1. Echo");
     PRINTX("2. Reverse");
     PRINTX("3. Normalize");
-
     bool user_is_selecting = true;
     std::string input;
     while (user_is_selecting)
     {
-        PRINTX("Select an option 1-3... Press y to continue");
+        PRINTX("Select an option 1-3.... To continue");
         std::cin >> input;
-        if (input.size() > 0)
-        {
-            if (input[0] == '1')
-            {
-                (effects_to_apply)[0] = 1;
-                break;
-            }
-            else if (input[0] == '2')
-            {
-                (effects_to_apply)[1] = 1;
-                break;
-            }
-            else if (input[0] == '3')
-            {
-                (effects_to_apply)[2] = 1;
-                break;
-            }
-            else if (input[0] == 'y')
+        if (input[0] == '1' || input[0] == '2' || input[0] == '3')
                 user_is_selecting = false;
-            else
-                PRINTX("!-- Invalid Selection --!");
-            input.clear();
-        }
+        else
+            PRINTX("!-- Invalid Selection --!");
+        input.clear();
     }
-    PRINTDIVIDER
-    return effects_to_apply;
+    return (atoi((char*)&input[0]));
 }
 
 std::string ConsoleManager::AskForUserWaveFile()
