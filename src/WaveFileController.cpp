@@ -26,8 +26,11 @@ static std::vector<float> reverse(std::vector<float> soundData, wav_header wavHe
   for (int it = 0; it < soundData.size(); it++)
   {
     bufferNew.push_back((short)((soundData[it]) * MAX_16BIT));
+    // std::cout << "normal = [" << (soundData[it]) << "]"<< std::endl; 
   }
   std::reverse(bufferNew.begin(), bufferNew.end());
+  //waves/8bit-mono.wav
+
   return (bufferNew);
 }
 
@@ -87,6 +90,7 @@ bool WaveFileController::AskForAndReadUserWavFile()
       for (int i = 0; i < chunkSize / wavHeader.sampleAlignment; i++)
       {
         soundData.push_back((float)buffer[i] / MAX_16BIT);
+        std::cout << "[" << (float)buffer[i] / MAX_16BIT << std::endl;
       }
     }
 
@@ -108,7 +112,7 @@ bool WaveFileController::AskForAndReadUserWavFile()
       bufferFinal = normalize(soundData, wavHeader);
     }
     CreateOutputFile(filePath, bufferFinal, wavHeader, effects_to_apply);
-    // consoleManager_->DisplayFileContents(wavHeader, wavFile);
+    consoleManager_->DisplayFileContents(wavHeader, wavFile);
     return true;
   }
   else
