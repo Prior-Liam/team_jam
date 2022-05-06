@@ -1,51 +1,33 @@
 #include "WaveFileController.hpp"//okay chekc that the data being read into the first file for sounda data is going into a char * vector
 
-static std::vector<float> echo(std::vector<float> &soundData, wav_header wavHeader, echo_params params)
+static void echo(std::vector<float> &soundData, wav_header wavHeader, echo_params params)
 {
-  std::vector<float> output;
-  auto decay = log(0.001f) / log(params.gain);
-  int newFileSize = int(soundData.size() + params.delay * decay);
-  std::vector<float> extendedSoundData(newFileSize, 0.0f);
-  extendedSoundData.insert(extendedSoundData.begin(), soundData.begin(), soundData.end());
-  output.reserve(extendedSoundData.size());
-  for (int it = 0; it < soundData.size(); it++)
-  {
-    if (it > params.delay)
-      output.push_back(extendedSoundData[it] + output[it - params.delay] * params.gain);
-    else
-      output.push_back(extendedSoundData[it]);
+  float gain = 0.25; 
+  params.delay = (int)(0.5 * wavHeader.sampleRate);
+  for(int i = 0; i < soundData.size(); i++) {
+      if ((i - params.delay) < 0) {
+        break;
+      } else {
+        soundData[i] = soundData[i] - (params.gain*soundData[i - params.delay]);
+      }
   }
-  return (output);
 }
 
-static std::vector<float> reverse(std::vector<float> soundData, wav_header wavHeader)
+static void reverse(std::vector<float>& soundData, wav_header wavHeader)
 {
-  std::vector<float> bufferNew;
-  bufferNew.reserve(wavHeader.dataBytes);
-  for (int it = 0; it < soundData.size(); it++)
-  {
-    bufferNew.push_back(soundData[it]);
-  }
-  std::reverse(bufferNew.begin(), bufferNew.end());
-  return (bufferNew);
+  soundData.reserve(wavHeader.dataBytes);
+  std::reverse(soundData.begin(), soundData.end());
 }
 
-// NEED TO HANDLE STEREO :,(
-static std::vector<float> normalize(std::vector<float> soundData, wav_header wavHeader)
+static void normalize(std::vector<float>& soundData, wav_header wavHeader)
 {
-  std::vector<float> bufferNew;
-  float maxValue = 0, percentageOfChange, sum;
-  bufferNew.reserve(wavHeader.dataBytes);
+  float maxValue = 0, ratio, sum;
   for (int it = 0; it < soundData.size(); it++)
     if (soundData[it] && std::abs(soundData[it]) > std::abs(maxValue))
       maxValue = soundData[it];
-  sum = 255 - maxValue;
-  percentageOfChange = (2.5 / sum) * 100;
+  ratio = 1/maxValue;
   for (int it = 0; it < soundData.size(); it++)
-  {
-    bufferNew.push_back((short)(((soundData[it] * percentageOfChange) + soundData[it])));
-  }
-  return (bufferNew);
+    soundData[it] *= ratio;
 }
 
 WaveFileController::WaveFileController()
@@ -58,8 +40,8 @@ bool WaveFileController::AskForAndReadUserWavFile()//change htis method name.
   int effects_to_apply;
   bool does_wav_file_exist = false;
 
-  uint8_t buffer8Bit, buffer8sBit;
-  int16_t buffer16Bit, buffer16sBit;
+  uint8_t buffer8Bit;
+  int16_t buffer16Bit;
   std::vector<float> soundData;
   std::vector<float> soundData2;
 
@@ -90,31 +72,51 @@ bool WaveFileController::AskForAndReadUserWavFile()//change htis method name.
         for (int i = 0; i < numSamples; i++) {
           wavFile.read((char*) &buffer8Bit, 1);
           soundData.push_back(((float)buffer8Bit-128)/127);
+          wavFile.read((char*) &buffer8Bit, 1);
           soundData2.push_back(((float)buffer8Bit-128)/127);
         }
       } else if (wavHeader.bitsPerSample == 16) {
         for (int it = 0; it < numSamples; it++) {
           wavFile.read((char *) &buffer16Bit, 2);
-          soundData.push_back((float)buffer16sBit/32768);
-          soundData2.push_back((float)buffer16sBit/32768);
+          soundData.push_back((float)buffer16Bit/32768);
+          wavFile.read((char*) &buffer16Bit, 2);
+          soundData2.push_back((float)buffer16Bit/32768);
         }
       }
     }
     effects_to_apply = consoleManager_->AskForUserEffectsToApply();
-    // switch (effects_to_apply) {//just add if statements here
-    //     case 1:
-    //       echo_params params;
-    //       params.gain = 0.07f;
-    //       params.delay = 6.0f;
-    //       bufferFinal = echo(soundData, wavHeader, params); break;
-    //     case 2:
-    //       bufferFinal = reverse(soundData, wavHeader); break;
-    //     case 3:
-    //       bufferFinal = normalize(soundData, wavHeader); break;
-    //     default:
-    //       throw "\nThis shouldn't have happened\n"; exit(0);
-    // }
-    CreateOutputFile(filePath, soundData, wavHeader, effects_to_apply);
+    switch (effects_to_apply) {//just add if statements here
+        case 1:
+          echo_params params;
+          params.gain = 0.25f;
+          params.delay = 6.0f;
+          if (wavHeader.numChannels == 1)
+            echo(soundData, wavHeader, params);
+          else {
+            echo(soundData, wavHeader, params);
+            echo(soundData2, wavHeader, params);
+          }
+          break;
+        case 2:
+          if (wavHeader.numChannels == 1) {
+            reverse(soundData, wavHeader);
+          } else {
+            reverse(soundData, wavHeader);
+            reverse(soundData2, wavHeader);
+          }
+          break;
+        case 3:
+          if (wavHeader.numChannels == 1) {
+            normalize(soundData, wavHeader);
+          } else {
+            normalize(soundData, wavHeader);
+            normalize(soundData2, wavHeader);
+          }
+          break;
+        default:
+          throw "\nThis shouldn't have happened\n"; exit(0);
+    }
+    CreateOutputFile(filePath, soundData, soundData2, wavHeader, effects_to_apply);
     consoleManager_->DisplayFileContents(wavHeader);
     return true;
   }
@@ -122,6 +124,41 @@ bool WaveFileController::AskForAndReadUserWavFile()//change htis method name.
     PRINTX("File: " << filePath << " does not exist");
   }
   return false;
+}
+
+void WaveFileController::write_bit16_stereo(std::vector<float> buffer, std::vector<float> buffer2, std::string outputFile, wav_header wavHeader) {
+  union {
+    uint16_t bufferOutput;
+    char b[2];
+  } bufferSpot;
+  std::ofstream of(outputFile, std::ios::binary | std::ios::out);
+  // std::cout << "im bere\n" << outputFile << std::endl;
+  if (of.is_open())
+  {
+    of.write((char *)&wavHeader, sizeof(wav_header));
+    // std::cout << buffer.size() << std::endl;
+    for (int it = 0; it < buffer.size(); it++){
+      buffer[it] = (buffer[it] * 32768);
+      buffer2[it] = (buffer2[it] * 32768);
+      if (buffer[it] > 32767)//need to change this possibly
+        buffer[it] = 32767;
+      if (buffer[it] < -32767)
+        buffer[it] = -32767;
+      if (buffer2[it] > 32767)
+        buffer2[it] = 32767;
+      if (buffer2[it] < -32767)
+        buffer2[it] = -32767;
+      bufferSpot.bufferOutput = (uint16_t)buffer[it];
+      of.write(bufferSpot.b, 2);
+      bufferSpot.bufferOutput = (uint16_t)buffer2[it];
+      of.write(bufferSpot.b, 2);
+    }
+    std::cout << "wrote the file successfully!" << std::endl;
+    of.flush();
+    of.close();
+    } else {
+    std::cerr << "Failed to open file : " << outputFile << std::endl;
+  }
 }
 
 void WaveFileController::write_bit16_mono(std::vector<float> buffer, std::string outputFile, wav_header wavHeader) {
@@ -135,13 +172,47 @@ void WaveFileController::write_bit16_mono(std::vector<float> buffer, std::string
     of.write((char *)&wavHeader, sizeof(wav_header));
     // std::cout << buffer.size() << std::endl;
     for (int it = 0; it < buffer.size(); it++){
-      buffer[it] = (buffer[it] * 32768);
-      if (buffer[it] > 32767)//need to change this possibly
-        buffer[it] = 32767;
-      if (buffer[it] < -32767)
-        buffer[it] = -32767;
+      buffer[it] = (buffer[it] * 32768.0f);
+      if (buffer[it] > 32767.0f)//need to change this possibly
+        buffer[it] = 32767.0f;
+      if (buffer[it] < -32767.0f)
+        buffer[it] = -32767.0f;
       bufferSpot.bufferOutput = (uint16_t)buffer[it];
       of.write(bufferSpot.b, 2);
+    }
+    std::cout << "wrote the file successfully!" << std::endl;
+    of.flush();
+    of.close();
+    } else {
+    std::cerr << "Failed to open file : " << outputFile << std::endl;
+  }
+}
+
+void WaveFileController::write_bit8_stereo(std::vector<float> buffer, std::vector<float> buffer2, std::string outputFile, wav_header wavHeader) {
+  union {
+    uint8_t bufferOutput;
+    char b[2];
+  } bufferSpot;
+  std::ofstream of(outputFile, std::ios::binary | std::ios::out);
+  if (of.is_open())
+  {
+    of.write((char *)&wavHeader, sizeof(wav_header));
+    for (int it = 0; it < buffer.size(); it++){
+      buffer[it] = ((buffer[it] * 127.0f) + 128.0f);
+      buffer2[it] = ((buffer2[it] * 127.0f) + 128.0f);
+      if (buffer[it] > 255)
+        buffer[it] = 255;
+      if (buffer[it] < 0)
+        buffer[it] = 0;
+      if (buffer2[it] > 255)
+        buffer2[it] = 255;
+      if (buffer2[it] < 0)
+        buffer2[it] = 0;
+      
+      bufferSpot.bufferOutput = (uint8_t)buffer[it];
+      of.write((char*)&bufferSpot.bufferOutput, 1);
+      bufferSpot.bufferOutput = (uint8_t)buffer2[it];
+      of.write((char*)&bufferSpot.bufferOutput, 1);
     }
     std::cout << "wrote the file successfully!" << std::endl;
     of.flush();
@@ -167,6 +238,7 @@ void WaveFileController::write_bit8_mono(std::vector<float> buffer, std::string 
         buffer[it] = 255;
       if (buffer[it] < 0)
         buffer[it] = 0;
+      
       bufferSpot.bufferOutput = (uint8_t)buffer[it];
       of.write(bufferSpot.b, 1);
     }
@@ -177,12 +249,9 @@ void WaveFileController::write_bit8_mono(std::vector<float> buffer, std::string 
     std::cerr << "Failed to open file : " << outputFile << std::endl;
   }
 }
-// void WaveFileController::write_bit16_mono() {}
-// void WaveFileController::write_bit8_stero() {}
-// void WaveFileController::write_bit16_stereo() {}
 
 void WaveFileController::CreateOutputFile(
-    std::string fileName, std::vector<float> buffer,
+    std::string fileName, std::vector<float> buffer, std::vector<float> buffer2,
     wav_header wavHeader, int effects_to_apply)
 {
   std::string outputFile;
@@ -205,9 +274,9 @@ void WaveFileController::CreateOutputFile(
   else if (wavHeader.numChannels == 1 && wavHeader.bitsPerSample == 16)
     write_bit16_mono(buffer, outputFile, wavHeader);
   else if (wavHeader.numChannels == 2 && wavHeader.bitsPerSample == 8)
-    write_bit8_stereo(buffer, outputFile, wavHeader);
-  // else if (wavHeader.numChannels == 2 && wavHeader.bitsPerSample == 16)
-  //   write_bit16_stereo(buffer, outputFile, wavHeader);
+    write_bit8_stereo(buffer, buffer2, outputFile, wavHeader);
+  else if (wavHeader.numChannels == 2 && wavHeader.bitsPerSample == 16)
+    write_bit16_stereo(buffer, buffer2, outputFile, wavHeader);
 }
 
 

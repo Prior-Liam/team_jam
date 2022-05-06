@@ -7,11 +7,10 @@ public:
   bool AskForAndReadUserWavFile();
   void write_bit8_mono(std::vector<float> buffer, std::string outputFile, wav_header wavHeader);
   void write_bit16_mono(std::vector<float> buffer, std::string outputFile, wav_header wavHeader);
-  void write_bit8_stereo(std::vector<float> buffer, std::string outputFile, wav_header wavHeader);
-  ///write_bit16_mono();
-  ///write_bit16_stereo();
+  void write_bit8_stereo(std::vector<float> buffer, std::vector<float> buffer2, std::string outputFile, wav_header wavHeader);
+  void write_bit16_stereo(std::vector<float> buffer, std::vector<float> buffer2, std::string outputFile, wav_header wavHeader);
   void CreateOutputFile(std::string fileName, std::vector<float> buffer,
-                        wav_header wavHeader, int effects_to_apply);
+    std::vector<float> buffer2, wav_header wavHeader, int effects_to_apply);
 
 private:
   ConsoleManager *consoleManager_;
