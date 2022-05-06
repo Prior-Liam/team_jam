@@ -8,7 +8,7 @@ public:
   std::string AskForUserWaveFile();
   int AskForUserEffectsToApply();
 
-  bool DisplayFileContents(wav_header wavHeader, std::ifstream &wavFile);
+  bool DisplayFileContents(wav_header wavHeader);
 
 private:
 };

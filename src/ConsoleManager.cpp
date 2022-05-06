@@ -13,13 +13,14 @@ int ConsoleManager::AskForUserEffectsToApply()
     {
         PRINTX("Select an option 1-3.... To continue");
         std::cin >> input;
-        if (input[0] == '1' || input[0] == '2' || input[0] == '3')
+        if (input == "1" || input == "2" || input == "3")
                 user_is_selecting = false;
-        else
+        else {
             PRINTX("!-- Invalid Selection --!");
-        input.clear();
+            input.clear();
+        }
     }
-    return (atoi((char*)&input[0]));
+    return (input[0] - 48);
 }
 
 std::string ConsoleManager::AskForUserWaveFile()
@@ -31,26 +32,20 @@ std::string ConsoleManager::AskForUserWaveFile()
   return input;
 }
 
-bool ConsoleManager::DisplayFileContents(wav_header wavHeader, std::ifstream &wavFile)
+bool ConsoleManager::DisplayFileContents(wav_header wavHeader)
 {
-  // std::cout << "File is                    :" << filelength << " bytes." << ENDL;
   PRINTX("RIFF header                :" << wavHeader.RIFFHeader[0] << wavHeader.RIFFHeader[1] << wavHeader.RIFFHeader[2] << wavHeader.RIFFHeader[3]);
   PRINTX("WAVE header                :" << wavHeader.WAVE[0] << wavHeader.WAVE[1] << wavHeader.WAVE[2] << wavHeader.WAVE[3]);
   PRINTX("FMT                        :" << wavHeader.fmt[0] << wavHeader.fmt[1] << wavHeader.fmt[2] << wavHeader.fmt[3]);
   PRINTX("Chunk Data size            :" << wavHeader.ChunkSize);
-
-  // Display the sampling Rate from the header
   PRINTX("Sampling Rate              :" << wavHeader.sampleRate);
   PRINTX("Number of bits used        :" << wavHeader.bitsPerSample);
   PRINTX("Number of channels         :" << wavHeader.numChannels);
   PRINTX("Number of bytes per second :" << wavHeader.byteRate);
-  PRINTX("Data length                :" << wavHeader.subchunk2Size);
+  PRINTX("Data length                :" << wavHeader.dataBytes);
   PRINTX("Audio Format               :" << wavHeader.AudioFormat);
-  // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM
-
   std::cout << "Block align          :" << wavHeader.sampleAlignment << ENDL;
   std::cout << "Data string          :" << wavHeader.subchunk2ID[0] << wavHeader.subchunk2ID[1] << wavHeader.subchunk2ID[2] << wavHeader.subchunk2ID[3] << ENDL;
-  std::cout << "Subchunk2Size size   :" << wavHeader.subchunk2Size << ENDL;
-  // fclose(wavFile);
+  std::cout << "SdataBytes size   :" << wavHeader.dataBytes << ENDL;
   return true;
 }

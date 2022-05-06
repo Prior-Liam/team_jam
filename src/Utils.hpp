@@ -8,7 +8,6 @@
 #define PRINTDIVIDER PRINTX("-------------------------------" << ENDL);
 #define PRINT std::cout
 #define ENDL std::endl
-#define MAX_16BIT 65535
 
 typedef struct WAV_HEADER
 {
@@ -27,7 +26,7 @@ typedef struct WAV_HEADER
     short bitsPerSample;   // Number of bits per sample
     /* "data" sub-chunk */
     uint8_t subchunk2ID[4]; // "data"  string
-    uint32_t subchunk2Size; // Sampled data length
+    int dataBytes; // Sampled data length
 } wav_header;
 
 typedef struct ECHO_PARAMS {

@@ -5,4 +5,4 @@ Files.o: src/Main.cpp src/WaveFileController.hpp src/ConsoleManager.hpp src/Util
 	g++ -std=c++11 -c src/Main.cpp src/WaveFileController.cpp src/ConsoleManager.cpp
 
 clean:
-	rm *.o *.gch wave
+	rm *.o wave
